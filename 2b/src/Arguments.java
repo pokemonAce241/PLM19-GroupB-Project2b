@@ -1,98 +1,109 @@
-public class Arguments {
-		public String description, command, option, metavar, help;
-		public int repeat, valid, seed;
-		public boolean verbose;
-		
-		public Arguments(String[] args) {
-			command = args[0];
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-			
-			if (args.length != 2) {
-				if (command.equals("-h") || command.equals("--help")) {
-					// Do Nothing
-				}
-				else {
-					command = "invalid";
-				}
-			}
-			
-			description = "Monte Carlo generator.";
-			addArguments(command, args);
-		}
+public class Arguments {
+	public String description, usage;
+	public int repeat, seed;
+	public boolean verbose;
+	private StringBuilder build;
+
+	public Arguments(String[] args) {
+		repeat = 1;
+		seed = 1;
+		verbose = false;
+
+		description = "Monte Carlo generator.";
+		usage = "usage: passing.py [-h] [-n rep] [-s seed] [-v verbose]";
 		
-		private void addArguments(String command, String[] args) {
-			switch(command) {
+		build = new StringBuilder();
+		build.append("error: unrecognized arguments: ");
+		
+		addArguments(args);
+	}
+
+	private void addArguments(String[] args) {
+		Iterator<String> iterate = Arrays.asList(args).iterator();
+		while (iterate.hasNext()) {
+			String current = iterate.next();
+			switch (current) {
 			case "-n":
 			case "--num-repeats":
+				String numValue = "";
 				try {
-					Integer.parseInt(args[1]);
-					setRepeats(args[1]);
+					numValue = iterate.next();
+					Integer.parseInt(numValue);
+					setRepeats(numValue);
 				} catch (NumberFormatException e) {
-					addArguments("invalid", args);
-					System.out.println("error: argument -n/--num-repeats: invalid int value: " + args[1]);
+					System.out.println(usage);
+					System.out.println("error: argument -n/--num-repeats: invalid int value: '" + numValue + "'");
+					System.exit(1);
+				} catch (NoSuchElementException e) {
+					System.out.println(usage);
+					System.out.println("error: argument -n/--num-repeats: expected one argument");
+					System.exit(1);
 				}
 				break;
 			case "-s":
 			case "--seed":
+				String seedValue = "";
 				try {
-					Integer.parseInt(args[1]);
-					setSeed(args[1]);
+					seedValue = iterate.next();
+					Integer.parseInt(seedValue);
+					setSeed(seedValue);
 				} catch (NumberFormatException e) {
-					addArguments("invalid", args);
-					System.out.println("error: argument -s/--seed: invalid int value: " + args[1]);
+					System.out.println(usage);
+					System.out.println("error: argument -s/--seed: invalid int value: '" + seedValue + "'");
+					System.exit(1);
+				} catch (NoSuchElementException e) {
+					System.out.println(usage);
+					System.out.println("error: argument -s/--seed: expected one argumnet");
+					System.exit(1);
 				}
 				break;
 			case "-v":
 			case "--verbose":
 				setVerbose();
+				iterate.next();
 				break;
 			case "-h":
 			case "--help":
 				getHelp();
-				break;
+				System.exit(0);
 			default:
-				System.out.println("usage: passing.py [-h] [-n rep] [-s seed] [-v verbose]");
-				if (args.length > 2) {
-					StringBuilder build = new StringBuilder();
-					build.append("error: unrecognized arguments: ");
-					for ( int i = 1; i < args.length; i++) {
-						build.append(args[i] + " ");
-					}
-					System.out.println(build);
+				addUnrecognized(current);
+				if (!iterate.hasNext()) {
+					System.out.println(usage);
+					System.out.println(build.toString());
+					System.exit(1);
 				}
-			
+			}
+
 		}
-		}
-		
-		private void setRepeats(String arg) {
-			repeat = Integer.parseInt(arg);
-			seed = 1;
-			verbose = false;
-		}
-		
-		private void setSeed(String arg) {
-			repeat = 1;
-			seed = Integer.parseInt(arg);
-			verbose = false;
-		}
-		
-		private void setVerbose() {
-			repeat = 1;
-			seed = 1;
-			//System.out.println("verbose: " + Boolean.getBoolean(arg));
-			verbose = true;
-		}
-		
-		private void getHelp() {
-			System.out.println("usage: passing.py [-h] [-n rep] [-s seed] [-v verbose]\n\n"
-					+ description + "\n\n"
-							+ "optional arguments:\n"
-							+ "  -h, --help            show this help message and exit\n"
-							+ "  -n rep, --num-repeats rep\n"
-							+ "                        Number of repeats\n"
-							+ "  -s seed, --seed seed  Random number seed\n"
-							+ "  -v verbose, --verbose verbose\n"
-							+ "                        Verbose mode");
-		}
-		
 	}
+
+	private void setRepeats(String arg) {
+		repeat = Integer.parseInt(arg);
+	}
+
+	private void setSeed(String arg) {
+		seed = Integer.parseInt(arg);
+	}
+
+	private void setVerbose() {
+		verbose = true;
+	}
+
+	private void getHelp() {
+		System.out.println("usage: passing.py [-h] [-n rep] [-s seed] [-v verbose]\n\n" + description + "\n\n"
+				+ "optional arguments:\n" + "  -h, --help            show this help message and exit\n"
+				+ "  -n rep, --num-repeats rep\n" + "                        Number of repeats\n"
+				+ "  -s seed, --seed seed  Random number seed\n" + "  -v verbose, --verbose verbose\n"
+				+ "                        Verbose mode");
+	}
+	
+	private void addUnrecognized(String arg) {
+		build.append(arg + " ");
+	}
+
+}
